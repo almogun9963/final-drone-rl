@@ -49,17 +49,17 @@ class CustomEnv(gym.Env):
 
         # starting position of the drone
         while True:
-            starting_x = random.uniform(200, 600)
-            starting_y = random.uniform(200, 600)
-            if not ((100 <= starting_x <= 130 and 100 <= 800 - starting_y <= 130) or (
-                    600 <= starting_x <= 630 and 100 <= 800 - starting_y <= 130) or (
-                            500 <= starting_x <= 530 and 400 <= 800 - starting_y <= 430) or (
-                            300 <= starting_x <= 330 and 400 <= 800 - starting_y <= 430) or (
-                            200 <= starting_x <= 230 and 700 <= 800 - starting_y <= 730) or (
-                            700 <= starting_x <= 730 and 700 <= 800 - starting_y <= 730)):
+            self.starting_x = random.uniform(200, 600)
+            self.starting_y = random.uniform(200, 600)
+            if not ((100 <= self.starting_x <= 130 and 100 <= 800 - self.starting_y <= 130) or (
+                    600 <= self.starting_x <= 630 and 100 <= 800 - self.starting_y <= 130) or (
+                            500 <= self.starting_x <= 530 and 400 <= 800 - self.starting_y <= 430) or (
+                            300 <= self.starting_x <= 330 and 400 <= 800 - self.starting_y <= 430) or (
+                            200 <= self.starting_x <= 230 and 700 <= 800 - self.starting_y <= 730) or (
+                            700 <= self.starting_x <= 730 and 700 <= 800 - self.starting_y <= 730)):
                 break
         starting_angle = random.uniform(-np.pi / 4, np.pi / 4)  # Random starting angle
-        self.drone = PyGame2D(starting_x, starting_y, starting_angle, 20, 100, 0.2, 0.4, 0.4,
+        self.drone = PyGame2D(self.starting_x, self.starting_y, starting_angle, 20, 100, 0.2, 0.4, 0.4,
                               self.space)  # creating drone object
 
     # an action is preformed
@@ -91,7 +91,7 @@ class CustomEnv(gym.Env):
         if np.abs(observation[3]) == 1 or np.abs(observation[6]) == 1 or np.abs(observation[7]) == 1:
             reward = -10
             self.finished = True
-        # get -10 reward when bump into the red boxes
+        # get -10 reward when bump into the trees
         if (100 <= current_x <= 130 and 100 <= current_y <= 130) or (
                 600 <= current_x <= 630 and 100 <= current_y <= 130) or (
                 500 <= current_x <= 530 and 400 <= current_y <= 430) or (
@@ -109,11 +109,11 @@ class CustomEnv(gym.Env):
     # Returns the observation
     def get_observation(self):
         speed_x, speed_y = self.drone.body.body.velocity_at_local_point((0, 0))  # speed of the drone in 2 axis
-        speed_x = np.clip(speed_x / 1330, -1, 1)
-        speed_y = np.clip(speed_y / 1330, -1, 1)
+        speed_x = np.clip(speed_x / 1100, -1, 1)
+        speed_y = np.clip(speed_y / 1100, -1, 1)
 
         phi = self.drone.body.body.angular_velocity  # Angular velocity of the drone
-        phi = np.clip(phi / 11.7, -1, 1)
+        phi = np.clip(phi / 8, -1, 1)
 
         angle = self.drone.body.body.angle  # The angle of the drone
         angle = np.clip(angle / (np.pi / 2), -1, 1)
@@ -146,16 +146,17 @@ class CustomEnv(gym.Env):
         pygame_events(self.space, self)  # from running_env.py
         self.display.fill((255, 255, 255))  # color the window
 
-        # Create the red boxes
-        pygame.draw.rect(self.display, (243, 0, 0), pygame.Rect(100, 100, 30, 30))
-        pygame.draw.rect(self.display, (243, 0, 0), pygame.Rect(600, 100, 30, 30))
-        pygame.draw.rect(self.display, (243, 0, 0), pygame.Rect(500, 400, 30, 30))
-        pygame.draw.rect(self.display, (243, 0, 0), pygame.Rect(300, 400, 30, 30))
-        pygame.draw.rect(self.display, (243, 0, 0), pygame.Rect(200, 700, 30, 30))
-        pygame.draw.rect(self.display, (243, 0, 0), pygame.Rect(700, 700, 30, 30))
+        # add trees
+        self.add_tree(100, 100)
+        self.add_tree(600, 100)
+        self.add_tree(500, 400)
+        self.add_tree(300, 400)
+        self.add_tree(200, 700)
+        self.add_tree(700, 700)
 
+        pygame.draw.circle(self.display, (0, 0, 255), (self.starting_x, 800 - self.starting_y), 5)
         # self.space.debug_draw(self.draw_options)
-        pygame.draw.circle(self.display, (255, 0, 0), (self.x_destination, 800 - self.y_destination),
+        pygame.draw.circle(self.display, (0, 255, 0), (self.x_destination, 800 - self.y_destination),
                            5)  # Destination point
 
         # The line of the flight
@@ -185,3 +186,8 @@ class CustomEnv(gym.Env):
     def add_current_position(self):
         x, y = self.drone.body.body.position
         self.line.append((x, 800 - y))
+
+    def add_tree(self, x, y):
+        image = pygame.image.load("tree.png")
+        image = pygame.transform.scale(image, (30, 30))
+        self.display.blit(image, (x, y))
